@@ -11,21 +11,21 @@ char LICENSE[] SEC("license") = "Apache-2.0";
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
     __uint(max_entries, 1 << 24);
-} events SEC(".maps");
+} kw_events SEC(".maps");
 
 struct {
     __uint(type, BPF_MAP_TYPE_ARRAY);
     __uint(max_entries, 1);
     __type(key, __u32);
     __type(value, struct kw_config);
-} config SEC(".maps");
+} kw_config_map SEC(".maps");
 
 struct {
     __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
     __uint(max_entries, 1);
     __type(key, __u32);
     __type(value, __u64);
-} stats SEC(".maps");
+} kw_stats SEC(".maps");
 
 struct kw_sockaddr_in {
     __u16 family;
@@ -44,7 +44,7 @@ struct kw_sockaddr_in6 {
 static __always_inline const struct kw_config *get_config(void)
 {
     __u32 key = 0;
-    return bpf_map_lookup_elem(&config, &key);
+    return bpf_map_lookup_elem(&kw_config_map, &key);
 }
 
 static __always_inline int event_allowed(__u32 pid, __u32 uid)
@@ -65,7 +65,7 @@ static __always_inline int event_allowed(__u32 pid, __u32 uid)
 static __always_inline void record_drop(void)
 {
     __u32 key = 0;
-    __u64 *count = bpf_map_lookup_elem(&stats, &key);
+    __u64 *count = bpf_map_lookup_elem(&kw_stats, &key);
     if (count != NULL) {
         *count += 1;
     }
@@ -82,7 +82,7 @@ static __always_inline struct kw_event *new_event(__u32 type)
         return NULL;
     }
 
-    struct kw_event *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+    struct kw_event *event = bpf_ringbuf_reserve(&kw_events, sizeof(*event), 0);
     if (event == NULL) {
         record_drop();
         return NULL;
