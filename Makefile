@@ -25,6 +25,9 @@ MULTIARCH_CFLAGS := $(if $(MULTIARCH),-I/usr/include/$(MULTIARCH),)
 
 COMMON_WARN := -Wall -Wextra -Wpedantic -Werror
 USER_CFLAGS := -std=c17 -O2 -g $(COMMON_WARN) -Iinclude -I$(BUILD_DIR) $(LIBBPF_CFLAGS)
+# bpftool embeds the BPF ELF as one generated string in the skeleton. GCC's
+# pedantic overlength-string warning is scoped only to this generated-header TU.
+MAIN_CFLAGS := $(USER_CFLAGS) -Wno-overlength-strings
 USER_LDLIBS := $(LIBBPF_LIBS) -lelf -lz
 BPF_CFLAGS := -target bpf -D__TARGET_ARCH_$(BPF_ARCH) -O2 -g -Wall -Werror \
 	-I$(BUILD_DIR) -Iinclude $(MULTIARCH_CFLAGS)
@@ -61,7 +64,7 @@ $(SKELETON): $(BPF_OBJECT)
 	mv $@.tmp $@
 
 $(BUILD_DIR)/main.o: src/main.c include/kernwatch.h include/format.h $(SKELETON)
-	$(CC) $(USER_CFLAGS) -c $< -o $@
+	$(CC) $(MAIN_CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/format.o: src/format.c include/kernwatch.h include/format.h | $(BUILD_DIR)
 	$(CC) $(USER_CFLAGS) -c $< -o $@
