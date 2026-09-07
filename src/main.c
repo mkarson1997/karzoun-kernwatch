@@ -238,9 +238,9 @@ int main(int argc, char **argv)
     }
 
     __u32 key = 0;
-    int config_fd = bpf_map__fd(skeleton->maps.config);
+    int config_fd = bpf_map__fd(skeleton->maps.kw_config_map);
     if (bpf_map_update_elem(config_fd, &key, &options.config, BPF_ANY) != 0) {
-        perror("bpf_map_update_elem(config)");
+        perror("bpf_map_update_elem(kw_config_map)");
         kernwatch_bpf__destroy(skeleton);
         return EXIT_FAILURE;
     }
@@ -253,7 +253,7 @@ int main(int argc, char **argv)
     }
 
     struct ring_buffer *ring = ring_buffer__new(
-        bpf_map__fd(skeleton->maps.events),
+        bpf_map__fd(skeleton->maps.kw_events),
         handle_event,
         &options,
         NULL);
@@ -274,7 +274,7 @@ int main(int argc, char **argv)
         }
     }
 
-    unsigned long long dropped = read_drop_count(bpf_map__fd(skeleton->maps.stats));
+    unsigned long long dropped = read_drop_count(bpf_map__fd(skeleton->maps.kw_stats));
     fprintf(stderr, "kernwatch: dropped_events=%llu\n", dropped);
 
     ring_buffer__free(ring);
