@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 
 BUILD_DIR := build
-BPFTOOL ?= $(shell if command -v bpftool >/dev/null 2>&1 && bpftool version >/dev/null 2>&1; then command -v bpftool; else find /usr/lib/linux-tools -type f -name bpftool 2>/dev/null | sort -V | tail -n 1; fi)
+BPFTOOL ?= $(shell if command -v bpftool >/dev/null 2>&1 && bpftool version >/dev/null 2>&1; then command -v bpftool; else find /usr/lib/linux-tools -name bpftool -print 2>/dev/null | sort -V | tail -n 1; fi)
 CLANG ?= clang
 CC ?= cc
 SAN_CC ?= clang
@@ -40,7 +40,7 @@ all: toolchain-check $(AGENT)
 
 toolchain-check:
 	@test -n "$(BPFTOOL)" || (echo "bpftool binary not found; install linux-tools for this distribution" >&2; exit 1)
-	@$(BPFTOOL) version >/dev/null
+	@"$(BPFTOOL)" version >/dev/null
 	@$(PKG_CONFIG) --exists libbpf
 
 $(BUILD_DIR):
@@ -48,14 +48,14 @@ $(BUILD_DIR):
 
 $(VMLINUX): | $(BUILD_DIR)
 	test -r /sys/kernel/btf/vmlinux
-	$(BPFTOOL) btf dump file /sys/kernel/btf/vmlinux format c > $@.tmp
+	"$(BPFTOOL)" btf dump file /sys/kernel/btf/vmlinux format c > $@.tmp
 	mv $@.tmp $@
 
 $(BPF_OBJECT): bpf/kernwatch.bpf.c include/kernwatch.h $(VMLINUX)
 	$(CLANG) $(BPF_CFLAGS) -c $< -o $@
 
 $(SKELETON): $(BPF_OBJECT)
-	$(BPFTOOL) gen skeleton $< > $@.tmp
+	"$(BPFTOOL)" gen skeleton $< > $@.tmp
 	mv $@.tmp $@
 
 $(BUILD_DIR)/main.o: src/main.c include/kernwatch.h include/format.h $(SKELETON)
