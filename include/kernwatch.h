@@ -29,10 +29,8 @@ struct kw_event {
     __u32 type;
     __u32 pid;
     __u32 tid;
-    __u32 ppid;
     __u32 uid;
     __u32 gid;
-    __s32 value;
     __u16 family;
     __u16 dport;
     __u8 daddr[16];

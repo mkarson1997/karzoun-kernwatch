@@ -13,7 +13,6 @@ static struct kw_event base_event(__u32 type)
     event.ts_ns = 42;
     event.pid = 100;
     event.tid = 101;
-    event.ppid = 50;
     event.uid = 1000;
     event.gid = 1000;
     (void)snprintf(event.comm, sizeof(event.comm), "curl");
@@ -48,6 +47,19 @@ static void test_connect_ipv4(void)
     assert(strstr(buffer, "\"dport\":443") != NULL);
 }
 
+static void test_exit_does_not_fabricate_status(void)
+{
+    struct kw_event event = base_event(KW_EVENT_EXIT);
+
+    char buffer[1024];
+    int rc = kw_format_event(&event, buffer, sizeof(buffer));
+
+    assert(rc > 0);
+    assert(strstr(buffer, "\"type\":\"exit\"") != NULL);
+    assert(strstr(buffer, "exit_code") == NULL);
+    assert(strstr(buffer, "ppid") == NULL);
+}
+
 static void test_comm_filter(void)
 {
     struct kw_event event = base_event(KW_EVENT_OPEN);
@@ -70,6 +82,7 @@ int main(void)
 {
     test_exec_json_escaping();
     test_connect_ipv4();
+    test_exit_does_not_fabricate_status();
     test_comm_filter();
     test_small_buffer_is_rejected();
 
