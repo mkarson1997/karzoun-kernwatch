@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 #include "vmlinux.h"
 
 #include <bpf/bpf_endian.h>
@@ -5,7 +6,7 @@
 
 #include "kernwatch.h"
 
-char LICENSE[] SEC("license") = "Apache-2.0";
+char LICENSE[] SEC("license") = "GPL";
 
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
