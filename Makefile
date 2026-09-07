@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 
 BUILD_DIR := build
-BPFTOOL ?= bpftool
+BPFTOOL ?= $(shell if command -v bpftool >/dev/null 2>&1 && bpftool version >/dev/null 2>&1; then command -v bpftool; else find /usr/lib/linux-tools -type f -name bpftool 2>/dev/null | sort -V | tail -n 1; fi)
 CLANG ?= clang
 CC ?= cc
 SAN_CC ?= clang
@@ -34,9 +34,14 @@ AGENT := $(BUILD_DIR)/kernwatch
 FORMAT_TEST := $(BUILD_DIR)/test_format
 SAN_TEST := $(BUILD_DIR)/test_format_sanitize
 
-.PHONY: all clean test sanitize verify
+.PHONY: all clean test sanitize verify toolchain-check
 
-all: $(AGENT)
+all: toolchain-check $(AGENT)
+
+toolchain-check:
+	@test -n "$(BPFTOOL)" || (echo "bpftool binary not found; install linux-tools for this distribution" >&2; exit 1)
+	@$(BPFTOOL) version >/dev/null
+	@$(PKG_CONFIG) --exists libbpf
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
