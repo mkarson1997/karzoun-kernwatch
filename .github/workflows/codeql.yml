@@ -23,10 +23,10 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             linux-tools-common linux-tools-generic clang llvm \
             libbpf-dev libelf-dev zlib1g-dev pkg-config
-      - uses: github/codeql-action/init@v3
+      - uses: github/codeql-action/init@v4
         with:
           languages: c-cpp
           queries: security-extended
       - name: Build
         run: make clean all
-      - uses: github/codeql-action/analyze@v3
+      - uses: github/codeql-action/analyze@v4
