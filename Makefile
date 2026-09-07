@@ -6,6 +6,7 @@ CLANG ?= clang
 CC ?= cc
 SAN_CC ?= clang
 PKG_CONFIG ?= pkg-config
+MULTIARCH := $(shell $(CC) -print-multiarch 2>/dev/null)
 
 UNAME_M := $(shell uname -m)
 ifeq ($(UNAME_M),x86_64)
@@ -20,12 +21,13 @@ endif
 
 LIBBPF_CFLAGS := $(shell $(PKG_CONFIG) --cflags libbpf)
 LIBBPF_LIBS := $(shell $(PKG_CONFIG) --libs libbpf)
+MULTIARCH_CFLAGS := $(if $(MULTIARCH),-I/usr/include/$(MULTIARCH),)
 
 COMMON_WARN := -Wall -Wextra -Wpedantic -Werror
 USER_CFLAGS := -std=c17 -O2 -g $(COMMON_WARN) -Iinclude -I$(BUILD_DIR) $(LIBBPF_CFLAGS)
 USER_LDLIBS := $(LIBBPF_LIBS) -lelf -lz
 BPF_CFLAGS := -target bpf -D__TARGET_ARCH_$(BPF_ARCH) -O2 -g -Wall -Werror \
-	-I$(BUILD_DIR) -Iinclude
+	-I$(BUILD_DIR) -Iinclude $(MULTIARCH_CFLAGS)
 
 VMLINUX := $(BUILD_DIR)/vmlinux.h
 BPF_OBJECT := $(BUILD_DIR)/kernwatch.bpf.o
