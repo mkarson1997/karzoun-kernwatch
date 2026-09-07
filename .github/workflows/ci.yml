@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: eBPF build and unit tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            bpftool clang llvm libbpf-dev libelf-dev zlib1g-dev pkg-config
+      - name: Build CO-RE object, skeleton and agent
+        run: make all
+      - name: Unit tests
+        run: make test
+      - name: Inspect artifacts
+        run: |
+          file build/kernwatch build/kernwatch.bpf.o
+          test -s build/kernwatch.skel.h
+
+  sanitizers:
+    name: ASan + UBSan
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Sanitized userspace tests
+        run: make sanitize
+
+  gate:
+    name: CI Gate
+    if: always()
+    needs: [build, sanitizers]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Enforce required jobs
+        if: needs.build.result != 'success' || needs.sanitizers.result != 'success'
+        run: exit 1
+      - name: Confirm green build
+        run: echo "KernWatch CI gates are green."
