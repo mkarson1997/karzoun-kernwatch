@@ -28,21 +28,24 @@ KernWatch currently targets Linux hosts with:
 - kernel BTF exposed at `/sys/kernel/btf/vmlinux`
 - BPF ring-buffer support
 - Clang/LLVM
-- `bpftool`
+- `bpftool` from the distribution's Linux tools package
 - libbpf development headers
 - libelf + zlib
 - GNU Make
 - a C17 compiler
 
-On Ubuntu:
+On Ubuntu 24.04, `bpftool` is provided through the Linux tools packages rather than a directly installable `bpftool` package:
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y bpftool clang llvm libbpf-dev libelf-dev zlib1g-dev pkg-config
+sudo apt-get install -y linux-tools-common linux-tools-generic clang llvm \
+  libbpf-dev libelf-dev zlib1g-dev pkg-config
 make all
 make test
 make sanitize
 ```
+
+The Makefile first tries a working `bpftool` on `PATH`, then falls back to the newest real binary under `/usr/lib/linux-tools`. This avoids depending on a version-specific wrapper matching the running CI kernel exactly.
 
 The build generates `vmlinux.h` from the running kernel BTF, compiles the CO-RE BPF object, generates a libbpf skeleton, and links the userspace agent.
 
