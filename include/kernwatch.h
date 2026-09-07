@@ -1,7 +1,9 @@
 #ifndef KERNWATCH_H
 #define KERNWATCH_H
 
+#ifndef __VMLINUX_H__
 #include <linux/types.h>
+#endif
 
 #define KW_COMM_LEN 16
 #define KW_PATH_LEN 256
