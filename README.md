@@ -3,6 +3,7 @@
 [![CI](https://github.com/mkarson1997/karzoun-kernwatch/actions/workflows/ci.yml/badge.svg)](https://github.com/mkarson1997/karzoun-kernwatch/actions/workflows/ci.yml)
 [![Runtime smoke](https://github.com/mkarson1997/karzoun-kernwatch/actions/workflows/runtime-smoke.yml/badge.svg)](https://github.com/mkarson1997/karzoun-kernwatch/actions/workflows/runtime-smoke.yml)
 [![CodeQL](https://github.com/mkarson1997/karzoun-kernwatch/actions/workflows/codeql.yml/badge.svg)](https://github.com/mkarson1997/karzoun-kernwatch/actions/workflows/codeql.yml)
+[![Release](https://img.shields.io/github/v/release/mkarson1997/karzoun-kernwatch)](https://github.com/mkarson1997/karzoun-kernwatch/releases)
 [![Userspace license](https://img.shields.io/badge/userspace-Apache--2.0-blue.svg)](LICENSE)
 [![eBPF license](https://img.shields.io/badge/eBPF-GPL--2.0--only-blue.svg)](LICENSES/GPL-2.0-only.txt)
 
@@ -22,6 +23,20 @@ KernWatch attaches tracepoint programs for:
 Events move from eBPF to userspace through a BPF ring buffer. Kernel-side filters can restrict collection by PID or UID, while an optional exact command-name filter runs in userspace.
 
 The event envelope includes schema version, monotonic kernel timestamp, PID/TID, UID/GID, command name and event-specific fields. Paths are bounded to 255 bytes plus a terminator. v0.1 deliberately does not fabricate parent-process or exit-status data it has not proven.
+
+## v0.1.0 distribution
+
+The first release is intentionally **source-distributed**. The GitHub Release contains a versioned source tarball and `SHA256SUMS.txt`. A prebuilt combined executable is not shipped in v0.1.0 because the generated libbpf skeleton embeds the GPL-2.0-only BPF object into the Apache-2.0 userspace executable; binary packaging is deferred until that distribution boundary is reviewed explicitly.
+
+After downloading the release assets, verify the source bundle before extracting it:
+
+```bash
+sha256sum -c SHA256SUMS.txt
+tar -xzf kernwatch-0.1.0-source.tar.gz
+cd kernwatch-0.1.0
+```
+
+See the [v0.1.0 release](https://github.com/mkarson1997/karzoun-kernwatch/releases/tag/v0.1.0) and [CHANGELOG](CHANGELOG.md).
 
 ## Build requirements
 
@@ -49,7 +64,11 @@ make sanitize
 
 The Makefile first tries a working `bpftool` on `PATH`, then falls back to the newest real binary under `/usr/lib/linux-tools`. This avoids depending on a version-specific wrapper matching the running CI kernel exactly.
 
-The build generates `vmlinux.h` from the running kernel BTF, compiles the CO-RE BPF object, generates a libbpf skeleton, and links the userspace agent.
+The build generates `vmlinux.h` from the running kernel BTF, compiles the CO-RE BPF object, generates a libbpf skeleton, and links the userspace agent. Release builds inject the tag version; normal development builds report `0.1.0-dev`.
+
+```bash
+./build/kernwatch --version
+```
 
 ## Run
 

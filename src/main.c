@@ -15,6 +15,10 @@
 #include "kernwatch.h"
 #include "kernwatch.skel.h"
 
+#ifndef KW_VERSION
+#define KW_VERSION "0.1.0-dev"
+#endif
+
 static volatile sig_atomic_t stop_requested = 0;
 
 struct runtime_options {
@@ -69,6 +73,7 @@ static void print_usage(FILE *stream, const char *program)
         "  --comm NAME    userspace exact command-name filter (max 15 bytes)\n"
         "  --no-open      disable openat file-open events\n"
         "  --poll-ms N    ring-buffer poll timeout, 1..60000 (default 250)\n"
+        "  --version      print build version and exit\n"
         "  --help         show this help\n",
         program);
 }
@@ -81,6 +86,7 @@ static int parse_options(int argc, char **argv, struct runtime_options *options)
         {"comm", required_argument, NULL, 'c'},
         {"no-open", no_argument, NULL, 'o'},
         {"poll-ms", required_argument, NULL, 'm'},
+        {"version", no_argument, NULL, 'V'},
         {"help", no_argument, NULL, 'h'},
         {NULL, 0, NULL, 0},
     };
@@ -90,7 +96,7 @@ static int parse_options(int argc, char **argv, struct runtime_options *options)
     options->poll_ms = 250;
 
     int option = 0;
-    while ((option = getopt_long(argc, argv, "u:p:c:om:h", long_options, NULL)) != -1) {
+    while ((option = getopt_long(argc, argv, "u:p:c:om:Vh", long_options, NULL)) != -1) {
         switch (option) {
         case 'u':
             if (parse_u32(optarg, &options->config.uid) != 0) {
@@ -122,6 +128,9 @@ static int parse_options(int argc, char **argv, struct runtime_options *options)
                 return -EINVAL;
             }
             break;
+        case 'V':
+            printf("kernwatch %s\n", KW_VERSION);
+            return 1;
         case 'h':
             print_usage(stdout, argv[0]);
             return 1;

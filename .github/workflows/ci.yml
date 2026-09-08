@@ -22,6 +22,8 @@ jobs:
             libbpf-dev libelf-dev zlib1g-dev pkg-config
       - name: Build CO-RE object, skeleton and agent
         run: make all
+      - name: Verify development version
+        run: test "$(./build/kernwatch --version)" = "kernwatch 0.1.0-dev"
       - name: Unit tests
         run: make test
       - name: Inspect artifacts
