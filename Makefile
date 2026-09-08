@@ -1,6 +1,7 @@
 SHELL := /bin/bash
 
 BUILD_DIR := build
+VERSION ?= 0.1.0-dev
 BPFTOOL ?= $(shell if command -v bpftool >/dev/null 2>&1 && bpftool version >/dev/null 2>&1; then command -v bpftool; else find /usr/lib/linux-tools -name bpftool -print 2>/dev/null | sort -V | tail -n 1; fi)
 CLANG ?= clang
 CC ?= cc
@@ -24,10 +25,11 @@ LIBBPF_LIBS := $(shell $(PKG_CONFIG) --libs libbpf)
 MULTIARCH_CFLAGS := $(if $(MULTIARCH),-I/usr/include/$(MULTIARCH),)
 
 COMMON_WARN := -Wall -Wextra -Wpedantic -Werror
+VERSION_CFLAGS := -DKW_VERSION=\"$(VERSION)\"
 USER_CFLAGS := -std=c17 -O2 -g $(COMMON_WARN) -Iinclude -I$(BUILD_DIR) $(LIBBPF_CFLAGS)
 # bpftool embeds the BPF ELF as one generated string in the skeleton. GCC's
 # pedantic overlength-string warning is scoped only to this generated-header TU.
-MAIN_CFLAGS := $(USER_CFLAGS) -Wno-overlength-strings
+MAIN_CFLAGS := $(USER_CFLAGS) $(VERSION_CFLAGS) -Wno-overlength-strings
 USER_LDLIBS := $(LIBBPF_LIBS) -lelf -lz
 BPF_CFLAGS := -target bpf -D__TARGET_ARCH_$(BPF_ARCH) -O2 -g -Wall -Werror \
 	-I$(BUILD_DIR) -Iinclude $(MULTIARCH_CFLAGS)
