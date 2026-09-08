@@ -1,4 +1,6 @@
 Karzoun KernWatch
 Copyright 2026 Mahmoud Karzoun
 
-Licensed under the Apache License, Version 2.0.
+Unless stated otherwise, this repository is licensed under the Apache License, Version 2.0.
+
+The kernel eBPF source file `bpf/kernwatch.bpf.c` is separately licensed under GPL-2.0-only. The corresponding license text is available at `LICENSES/GPL-2.0-only.txt`.

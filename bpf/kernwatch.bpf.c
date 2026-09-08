@@ -1,12 +1,12 @@
+// SPDX-License-Identifier: GPL-2.0-only
 #include "vmlinux.h"
 
-#include <bpf/bpf_core_read.h>
 #include <bpf/bpf_endian.h>
 #include <bpf/bpf_helpers.h>
 
 #include "kernwatch.h"
 
-char LICENSE[] SEC("license") = "Apache-2.0";
+char LICENSE[] SEC("license") = "GPL";
 
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
@@ -95,12 +95,6 @@ static __always_inline struct kw_event *new_event(__u32 type)
     event->tid = (__u32)pid_tgid;
     event->uid = uid;
     event->gid = uid_gid >> 32;
-
-    struct task_struct *task = (struct task_struct *)bpf_get_current_task_btf();
-    if (task != NULL) {
-        event->ppid = BPF_CORE_READ(task, real_parent, tgid);
-    }
-
     bpf_get_current_comm(event->comm, sizeof(event->comm));
     return event;
 }
@@ -127,12 +121,6 @@ int handle_process_exit(void *ctx)
     struct kw_event *event = new_event(KW_EVENT_EXIT);
     if (event == NULL) {
         return 0;
-    }
-
-    struct task_struct *task = (struct task_struct *)bpf_get_current_task_btf();
-    if (task != NULL) {
-        int exit_code = BPF_CORE_READ(task, exit_code);
-        event->value = exit_code >> 8;
     }
 
     bpf_ringbuf_submit(event, 0);

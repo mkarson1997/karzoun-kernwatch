@@ -11,15 +11,15 @@ The build produces `vmlinux.h` from `/sys/kernel/btf/vmlinux` and uses libbpf CO
 
 ## Maps
 
-### `config`
+### `kw_config_map`
 
 A one-entry array map contains the runtime PID/UID filter configuration and the open-event capture toggle. PID and UID checks happen before a ring-buffer reservation.
 
-### `events`
+### `kw_events`
 
 A bounded BPF ring buffer transfers fixed-size `kw_event` records. Kernel code never allocates variable-sized event records.
 
-### `stats`
+### `kw_stats`
 
 A per-CPU one-entry array records ring-buffer reservation failures. Per-CPU storage avoids contended atomic updates in the hot path. Userspace sums the counters at shutdown.
 
@@ -30,9 +30,15 @@ The event schema intentionally distinguishes observation from outcome:
 - `exec` is emitted at `sys_enter_execve`; it does not prove the image was successfully executed.
 - `open` is emitted at `sys_enter_openat`; it does not prove the file was opened.
 - `connect` is emitted at `sys_enter_connect`; it does not prove a connection was established.
-- `exit` is emitted at `sched_process_exit`.
+- `exit` is emitted at `sched_process_exit`, without a fabricated status or termination reason.
 
-Future milestones can pair entry/exit events when outcome semantics are needed.
+The v0.1 envelope carries PID/TID and UID/GID but does not claim parent-process metadata. Future milestones can add richer process relationships and pair syscall entry/exit events when outcome semantics are needed.
+
+## Runtime verification
+
+Compilation is not enough for eBPF. The privileged runtime smoke job builds the CO-RE object and skeleton, loads and attaches the programs on an Ubuntu 24.04 hosted VM, triggers a process execution and localhost TCP connection, validates schema-1 NDJSON, then verifies graceful SIGTERM shutdown and drop accounting.
+
+That runtime test exposed a real verifier/licensing incompatibility during development: tracing helpers such as user-memory probe reads require a GPL-compatible BPF program declaration. KernWatch therefore keeps the userspace under Apache-2.0 while the kernel BPF source is GPL-2.0-only.
 
 ## Failure model
 
@@ -42,4 +48,8 @@ If the kernel rejects the BPF object because of missing features, verifier const
 
 ## Portability
 
-CO-RE reduces kernel-structure coupling. It does not guarantee support for every distribution or security policy. The first milestone builds on x86_64 and arm64 host architecture mappings; broader compatibility requires measured CI evidence.
+CO-RE reduces kernel-structure coupling. It does not guarantee support for every distribution or security policy. The first milestone has measured build and runtime evidence on x86_64 Ubuntu 24.04; arm64 build mapping exists but is not advertised as runtime-verified until corresponding evidence exists.
+
+## Licensing boundary
+
+Repository code is Apache-2.0 unless a file says otherwise. `bpf/kernwatch.bpf.c` is explicitly GPL-2.0-only so the loaded BPF object can legally and technically use kernel helpers marked GPL-only. The separate license text is stored under `LICENSES/`.

@@ -124,12 +124,11 @@ int kw_format_event(const struct kw_event *event, char *buffer, size_t capacity)
         scratch,
         sizeof(scratch),
         "{\"schema\":1,\"type\":\"%s\",\"ts_ns\":%llu,\"pid\":%u,\"tid\":%u,"
-        "\"ppid\":%u,\"uid\":%u,\"gid\":%u,\"comm\":",
+        "\"uid\":%u,\"gid\":%u,\"comm\":",
         event_name(event->type),
         (unsigned long long)event->ts_ns,
         event->pid,
         event->tid,
-        event->ppid,
         event->uid,
         event->gid);
 
@@ -153,15 +152,6 @@ int kw_format_event(const struct kw_event *event, char *buffer, size_t capacity)
             return rc;
         }
         rc = append_json_string(buffer, capacity, &used, event->path);
-        if (rc != 0) {
-            return rc;
-        }
-    } else if (event->type == KW_EVENT_EXIT) {
-        written = snprintf(scratch, sizeof(scratch), ",\"exit_code\":%d", event->value);
-        if (written < 0 || (size_t)written >= sizeof(scratch)) {
-            return -EIO;
-        }
-        rc = append_text(buffer, capacity, &used, scratch);
         if (rc != 0) {
             return rc;
         }
