@@ -9,7 +9,35 @@
 
 KernWatch is a Linux eBPF telemetry agent written in C. The v0.1 foundation observes a deliberately bounded set of kernel events and streams them to userspace as newline-delimited JSON (NDJSON).
 
-It is **not an EDR**, does not block activity, and does not claim threat detection. The current goal is to make kernel telemetry collection, filtering, transport, and failure accounting explicit and testable.
+It is **not an EDR**, does not block activity, and does not claim threat detection. The current goal is to make kernel telemetry collection, filtering, transport, failure accounting, runtime verification and security boundaries explicit and testable.
+
+## Architecture at a glance
+
+```mermaid
+flowchart LR
+    K[Linux tracepoints] --> B[eBPF CO-RE programs]
+    B --> R[(BPF ring buffer)]
+    R --> U[libbpf userspace agent]
+    U --> F[Optional comm filter]
+    F --> N[NDJSON]
+    B --> S[(Per-CPU drop counters)]
+    S --> U
+```
+
+PID/UID filtering happens in the kernel before ring-buffer reservation. Userspace owns loading, attachment, command filtering and serialization. See [Architecture](docs/architecture.md) for the full trust-boundary and failure model.
+
+## Engineering proof points
+
+| Area | What the repository demonstrates |
+| --- | --- |
+| Linux systems | C17, eBPF, libbpf, BTF and CO-RE against real kernel interfaces. |
+| Telemetry design | Bounded fixed-size events, ring-buffer transport and explicit drop accounting. |
+| Semantic correctness | Syscall-entry observations are not mislabeled as successful outcomes. |
+| Runtime validation | A privileged CI job performs real BPF load/attach, triggers events, parses NDJSON and verifies graceful shutdown. |
+| Memory safety | Userspace tests run under ASan + UBSan. |
+| Security analysis | CodeQL C/C++ analysis uses `security-extended` queries. |
+| Supply-chain security | Third-party GitHub Actions are pinned to reviewed immutable commit SHAs. |
+| Release discipline | Deterministic source archive, SHA-256 manifest and explicit dual-license distribution boundary. |
 
 ## v0.1 telemetry
 
@@ -97,6 +125,15 @@ KernWatch prints the accumulated ring-buffer reserve-failure count to stderr at 
 ## Runtime evidence
 
 The dedicated privileged smoke workflow performs a real load/attach on an Ubuntu 24.04 GitHub-hosted VM, triggers process execution and a localhost TCP connection, parses the emitted NDJSON, and verifies graceful SIGTERM shutdown. This is separate from the compile/security gate so kernel-host policy remains explicit.
+
+## Security and delivery controls
+
+- CI builds the CO-RE object, libbpf skeleton and userspace agent and runs unit tests
+- ASan + UBSan execute independently from the normal build gate
+- CodeQL analyzes C/C++ with `security-extended` queries
+- the path-scoped privileged smoke validates actual BPF loading and attachment
+- third-party GitHub Actions are pinned to immutable reviewed commit SHAs
+- release archives are deterministic (`git archive` + `gzip -n`) and ship with `SHA256SUMS.txt`
 
 ## Design boundaries
 
